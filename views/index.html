@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Butler</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #333;
+      color: white;
+    }
+
+    #app {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    button {
+      background-color: #444;
+      border: 2px solid #555;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      font-size: 18px;
+      margin: 10px;
+      padding: 10px;
+      text-transform: uppercase;
+    }
+
+    button:hover {
+      background-color: #555;
+    }
+
+    button:disabled {
+      background-color: #333;
+      cursor: not-allowed;
+    }
+
+    #response {
+      margin-top: 20px;
+    }
+
+    #logs {
+      white-space: pre-wrap;
+      height: 150px; /* Add a fixed height */
+      overflow: auto; /* Add overflow to make it scrollable */
+    }
+
+  </style>
+</head>
+<body>
+<div id="app">
+    <h1>Alfred</h1>
+    <div id="voice-controls">
+      <button id="start">Start</button>
+      <button id="stop">Stop</button>
+    </div>
+    <div id="thinking"></div>
+    <div id="response"></div>
+    <div id="terminal-output"></div>
+ </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const startButton = document.getElementById('start');
+      const stopButton = document.getElementById('stop');
+      const responseElement = document.getElementById('response');
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      let recognition = new SpeechRecognition();
+      recognition.lang = 'en-GB';
+
+      startButton.addEventListener('click', () => {
+        recognition.start();
+        startButton.disabled = true;
+        stopButton.disabled = false;
+      });
+
+      stopButton.addEventListener('click', async () => {
+        recognition.stop();
+        startButton.disabled = false;
+        stopButton.disabled = true;
+      });
+
+      recognition.addEventListener('result', async (event) => {
+        const text = event.results[0][0].transcript;
+        const response = await processVoice(text);
+        speak(response);
+      });
+
+      async function processVoice(text) {
+        const response = await fetch('/process-voice', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text }),
+        });
+
+        const result = await response.text();
+        return result;
+      }
+
+      function speak(text) {
+        const synth = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-GB';
+        synth.speak(utterance);
+        responseElement.innerText = `Alfred: ${text}`;
+      }
+
+      fetchLogs();
+    });
+
+   async function fetchLogs() {
+      const response = await fetch('/fetch-logs');
+      const logs = await response.text();
+      const logsArray = logs.split('\n');
+      const lastFiveEntries = logsArray.slice(-6, -1).join('\n');
+      document.getElementById('logs').innerText = lastFiveEntries;
+    }
+
+    const socket = io();
+    const terminalOutput = document.getElementById('terminal-output');
+    const userInputForm = document.getElementById('user-input-form');
+    const userInput = document.getElementById('user-input');
+
+    socket.on('terminal response', (response) => {
+      const responseElement = document.createElement('div');
+      responseElement.textContent = response;
+      terminalOutput.appendChild(responseElement);
+    });
+
+    userInputForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = userInput.value;
+      const response = await processVoice(input);
+      speak(response);
+      userInput.value = '';
+    });
+
+
+  </script>
+</body>
+</html>
