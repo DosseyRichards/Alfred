@@ -1,4 +1,4 @@
-const express = require('express');
+  const express = require('express');
 const path = require('path');
 const openai = require('openai-node');
 const { spawn } = require('child_process');
@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 // Set up OpenAI API key
-openai.api_key = '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';
+openai.api_key = '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';
 
 // Set up Google Search API key and CX
 const googleSearchApiKey = 'AIzaSyDWb0d2x_4jSV5Dln1KO8odMBUv6vxaEAU';
@@ -28,7 +28,7 @@ const taskPhrases = ['do a task for me', 'do this for me'];
 let autoGptProcess;
 
 function startAutoGptProcess() {
-  const autoGptProcess = spawn('docker-compose', ['run','--rm' ,'auto-gpt', '--continuous', '--gpt4only'], { cwd: '/Users/dosseyrichards/Thanos-GPT' });
+  const autoGptProcess = spawn('docker-compose', ['run','--rm' ,'auto-gpt','--gpt3only' ,'--continuous'], { cwd: './Alfred-AutoGPT/autogpts/autogpt' });
 
   autoGptProcess.stdout.on('data', (data) => {
     console.log(`stdout: ${data}`);
@@ -38,6 +38,13 @@ function startAutoGptProcess() {
     if (data.toString().includes("Continue (y/n):")) {
       autoGptProcess.stdin.write('n\n');
     }
+    else if (data.toString().includes("Continue with these settings? [Y/n]")) {
+      autoGptProcess.stdin.write('\n');
+    }
+    else if (data.toString().includes("press enter to keep current)")) {
+      autoGptProcess.stdin.write('\n');
+    }
+
   });
 
   autoGptProcess.stderr.on('data', (data) => {
@@ -72,16 +79,23 @@ async function transcribeToAlfredsVoice(rawOutput) {
 
   const extractedText = `Thoughts: ${thoughts}\nReasoning: ${reasoning}\nPlan: ${plan}\nCriticism: ${criticism}`;
 
+  try {
   const response = await openai.Completion.create({
     engine: 'davinci-codex',
-    prompt: `You are a butler named Alfred.You are a butler named Alfred. My name is Dossey Richards, I am a Man. and you work for me. Be polite and answer all questions with a one-sentence answer that is very accurate. Try to greet me properly as a butler would. Transcribe the following thoughts, reasoning, plan, and criticism in a polite and human-readable manner,.Content:\n\n"${extractedText}, "\n\nAlfred's response:`,
+    prompt: `You are a butler named Alfred. My name is Dossey Richards, I am a Man. and you work for me. Be polite and answer all questions with a one-sentence answer that is very accurate. Try to greet me properly as a butler would. Transcribe the following thoughts, reasoning, plan, and criticism in a polite and human-readable manner,.Content:\n\n"${extractedText}, "\n\nAlfred's response:`,
     max_tokens: 150,
     n: 1,
     stop: null,
     temperature: 0.7,
   });
-
-  return response.choices[0].text.trim();
+  console.log("response object", response)
+  const generalMessage = thoughts + reasoning + plan; 
+  return generalMessage;
+} catch (error) {
+  console.error("Error in the AI request:", error);
+  console.log("response body", response); 
+  // Handle the error as needed
+}
 }
 
 
@@ -130,6 +144,8 @@ temperature: 0.7,
       console.log(`stdout: ${data}`);
       const alfredResponse = await transcribeToAlfredsVoice(data.toString());
       // res.send(alfredResponse);
+      console.log(alfredResponse);
+
     });
 
     autoGptProcess.stderr.on('data', (data) => {
@@ -181,11 +197,11 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('user input', (input) => {
-    console.log(`User input: ${input}`);
-    // Send user input to the Auto-GPT process
-    autoGptProcess.stdin.write(`${input}\n`);
-  });
+  // socket.on('user input', (input) => {
+  //   console.log(`User input: ${input}`);
+  //   // Send user input to the Auto-GPT process
+  //   autoGptProcess.stdin.write(`${input}\Y`);
+  // });
 socket.on('disconnect', () => {
 console.log('User disconnected');
 });
