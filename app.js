@@ -28,7 +28,7 @@ const taskPhrases = ['do a task for me', 'do this for me'];
 let autoGptProcess;
 
 function startAutoGptProcess() {
-  const autoGptProcess = spawn('docker-compose', ['run','--rm' ,'auto-gpt','--gpt3only' ,'--continuous'], { cwd: './Alfred-AutoGPT/autogpts/autogpt' });
+  const autoGptProcess = spawn('docker-compose', ['run','--rm' ,'auto-gpt','--gpt3only' ,'--continuous'], { cwd: './Alfred-Brain/autogpts/autogpt' });
   const infoKeywords = ["REASONING:", "ACTION:", "SYSTEM", "DOGPROGPT THOUGHTS:", "CRITICISM:", "PLAN: :", "success", "Creating"];
 
   autoGptProcess.stdout.on('data', (data) => {
@@ -52,8 +52,8 @@ function startAutoGptProcess() {
   });
 
   autoGptProcess.stderr.on('data', (data) => {
-    //console.error(`stderr: ${data}`);
-    //io.emit('terminal response', data.toString());
+    // console.error(`stderr: ${data}`);
+    // io.emit('terminal response', data.toString());
   });
 
   autoGptProcess.on('close', (code) => {
