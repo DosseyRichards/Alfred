@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 // Set up OpenAI API key
-openai.api_key = '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';
+openai.api_key = '';
 
 // Set up Google Search API key and CX
 const googleSearchApiKey = 'AIzaSyDWb0d2x_4jSV5Dln1KO8odMBUv6vxaEAU';
@@ -29,15 +29,19 @@ let autoGptProcess;
 
 function startAutoGptProcess() {
   const autoGptProcess = spawn('docker-compose', ['run','--rm' ,'auto-gpt','--gpt3only' ,'--continuous'], { cwd: './Alfred-AutoGPT/autogpts/autogpt' });
+  const infoKeywords = ["REASONING:", "ACTION:", "SYSTEM", "DOGPROGPT THOUGHTS:", "CRITICISM:", "PLAN: :", "success", "Creating"];
 
   autoGptProcess.stdout.on('data', (data) => {
-    console.log(`stdout: ${data}`);
-    io.emit('terminal response', data.toString());
 
     // Check for the "Continue (y/n):" prompt
     if (data.toString().includes("Continue (y/n):")) {
       autoGptProcess.stdin.write('n\n');
     }
+
+    if (infoKeywords.some(keyword => data.toString().includes(keyword))) {
+       console.log(`Alfred: ${data}`);
+    }
+
     else if (data.toString().includes("Continue with these settings? [Y/n]")) {
       autoGptProcess.stdin.write('\n');
     }
@@ -48,8 +52,8 @@ function startAutoGptProcess() {
   });
 
   autoGptProcess.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-    io.emit('terminal response', data.toString());
+    //console.error(`stderr: ${data}`);
+    //io.emit('terminal response', data.toString());
   });
 
   autoGptProcess.on('close', (code) => {
@@ -150,7 +154,7 @@ temperature: 0.7,
 
     autoGptProcess.stderr.on('data', (data) => {
       console.error(`stderr: ${data}`);
-      io.emit('terminal response', data.toString());
+      io.emit(' 2 terminal response', data.toString());
     });
 
     autoGptProcess.on('close', (code) => {
