@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 // Set up OpenAI API key
-openai.api_key = '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';
+openai.api_key = '';
 
 // Set up Google Search API key and CX
 const googleSearchApiKey = 'AIzaSyDWb0d2x_4jSV5Dln1KO8odMBUv6vxaEAU';
